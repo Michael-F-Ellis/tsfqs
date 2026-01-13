@@ -64,3 +64,40 @@ function runParserTests() {
     console.log("Test 2 Completed");
 }
 runParserTests();
+// Test 3: Invalid Directives
+console.log("Test 3: Invalid Directives (expecting error)");
+const input3 = `Title
+  
+  [K0] Line 1 |
+  `;
+const parser3 = new parser_js_1.Parser(new lexer_js_1.Lexer(input3).getAllTokens());
+try {
+    parser3.parseScore();
+    console.error("Test 3 Failed: Expected error for K in lyric line");
+}
+catch (e) {
+    if (e.message.includes("Directive 'K' is not allowed")) {
+        console.log("Test 3 Passed: Caught expected error for K in lyric line");
+    }
+    else {
+        console.error(`Test 3 Failed: Unexpected error message: ${e.message}`);
+    }
+}
+const input4 = `Title
+  
+  valid lyrics |
+  [N3] c d |
+  `;
+const parser4 = new parser_js_1.Parser(new lexer_js_1.Lexer(input4).getAllTokens());
+try {
+    parser4.parseScore();
+    console.error("Test 3 Failed: Expected error for N in pitch line");
+}
+catch (e) {
+    if (e.message.includes("Directive 'N' is not allowed")) {
+        console.log("Test 3 Passed: Caught expected error for N in pitch line");
+    }
+    else {
+        console.error(`Test 3 Failed: Unexpected error message: ${e.message}`);
+    }
+}

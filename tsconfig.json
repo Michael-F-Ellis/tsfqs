@@ -4,7 +4,8 @@
 		"module": "esnext",
 		"lib": [
 			"dom",
-			"esnext"
+			"esnext",
+			"es2015"
 		],
 		"strict": true,
 		"moduleResolution": "bundler",

@@ -196,7 +196,7 @@ class Parser {
             }
             endedWithBarline = false; // Reset if we see content
             if (token.type === token_js_1.TokenType.LBrak) {
-                const dirs = this.parseDirectives();
+                const dirs = this.parseDirectives(['N', 'B', 'T']);
                 if (measures.length === 0 && currentBeats.length === 0 && currentSubdivisions.length === 0) {
                     directives.push(...dirs);
                 }
@@ -284,7 +284,7 @@ class Parser {
                 continue;
             }
             if (token.type === token_js_1.TokenType.LBrak) {
-                const dirs = this.parseDirectives();
+                const dirs = this.parseDirectives(['K', 'O', 'I', 'V']);
                 if (measures.length === 0 && currentElements.length === 0) {
                     directives.push(...dirs);
                 }
@@ -349,9 +349,21 @@ class Parser {
         // Check Note
         if (this.check(token_js_1.TokenType.Identifier)) {
             const val = this.peek().value;
+            // Strict single char check
             if (/^[a-g]$/.test(val)) {
                 this.advance();
                 return { kind: 'Pitch', note: val, accidental, octaveShift, location: startLoc };
+            }
+            // Handle run-on notes (e.g. cdef)
+            else if (/^[a-g]+$/.test(val)) {
+                // Take first char, modify token to have remainder
+                const first = val[0];
+                const remainder = val.substring(1);
+                // Do NOT advance index, but modify the token in place
+                // This is a bit hacky but keeps the stream valid
+                this.tokens[this.pos].value = remainder;
+                // Return validity for first char
+                return { kind: 'Pitch', note: first, accidental, octaveShift, location: startLoc };
             }
         }
         // If we consumed shifts/accidental but no note? Error?
@@ -360,13 +372,16 @@ class Parser {
         }
         return null;
     }
-    parseDirectives() {
+    parseDirectives(allowed) {
         this.consume(token_js_1.TokenType.LBrak, "Expected '['");
         const dirs = [];
         while (!this.check(token_js_1.TokenType.RBrak) && !this.isAtEnd()) {
             const loc = { line: this.peek().line, col: this.peek().col };
             if (this.check(token_js_1.TokenType.Identifier)) {
                 const name = this.advance().value;
+                if (allowed.indexOf(name) === -1) {
+                    throw this.error(this.previous(), `Directive '${name}' is not allowed in this context`);
+                }
                 if (name === 'N') {
                     const count = parseInt(this.consume(token_js_1.TokenType.Number, "Expected number for N").value);
                     dirs.push({ type: 'N', count, location: loc });
