@@ -30,9 +30,4 @@ export interface ScoreLayout {
 	blocks: BlockLayout[];
 }
 
-export const LAYOUT_CONSTANTS = {
-	FONT_WIDTH: 12,
-	FONT_HEIGHT: 20,
-	STAFF_LINE_SPACING: 35, // Distance between octave lines (G to G)
-	BASE_MARGIN: 50,
-};
+

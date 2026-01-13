@@ -1,5 +1,7 @@
-import * as AST from './ast.js';
-import { BlockLayout, CommandType, LAYOUT_CONSTANTS, RenderCommand, ScoreLayout } from './layout-types.js';
+import * as AST from './ast';
+import { BlockLayout, CommandType, RenderCommand, ScoreLayout } from './layout-types';
+import { KeySignatureState, PitchState, flattenLyrics, flattenPitches, LyricItem, PitchQueueItem } from './sequencing';
+import { BEAT_MULTIPLIERS, LAYOUT_CONSTANTS } from './constants';
 
 // --- Pitch Helpers ---
 
@@ -39,16 +41,6 @@ function getPitchY(centerLineY: number, octave: number, note: string, accidental
 		return centerLineY;
 	}
 
-	const gOffset = 7;
-	// Octave Shift relative to Reference Octave
-	// If Reference is G4 (O4), and Note is O4, shift is 0.
-	// If Note is O5, shift is 1 * Height.
-	// Legacy: "octaveHeight" was ~70 (20 * 3.5).
-	// Spec: "Staff lines spaced one octave apart."
-	// LAYOUT_CONSTANTS.STAFF_LINE_SPACING = 35. 
-	// Wait, in legacy code used "octaveHeight: 20 * 3.5". Here we use 35.
-	// Let's stick to STAFF_LINE_SPACING.
-
 	const octaveDiff = octave - referenceOctave;
 	const octaveShift = octaveDiff * LAYOUT_CONSTANTS.STAFF_LINE_SPACING;
 
@@ -62,47 +54,6 @@ function getPitchY(centerLineY: number, octave: number, note: string, accidental
 	yPos += (vOffset - 5) * stepSize;
 
 	return yPos;
-}
-
-// --- Key Sig ---
-
-class KeySignatureState {
-	private currentKey: { accidental: string | null, count: number } = { accidental: null, count: 0 };
-	private measureAccidentals: Record<string, string> = {}; // key: "note+octave" -> acc
-
-	constructor() { }
-
-	setKey(acc: string | null, count: number) {
-		this.currentKey = { accidental: acc, count };
-	}
-
-	resetMeasure() {
-		this.measureAccidentals = {};
-	}
-
-	getAccidental(note: string, octave: number, explicit: string | null): string {
-		const id = `${note}${octave}`;
-		if (explicit) {
-			this.measureAccidentals[id] = explicit;
-			return explicit;
-		}
-		if (this.measureAccidentals[id]) return this.measureAccidentals[id];
-
-		// Key Sig fallback
-		// Sharps: F C G D A E B
-		const sharps = ['f', 'c', 'g', 'd', 'a', 'e', 'b'];
-		const flats = ['b', 'e', 'a', 'd', 'g', 'c', 'f'];
-
-		if (this.currentKey.accidental === '#') {
-			const affected = sharps.slice(0, this.currentKey.count);
-			if (affected.indexOf(note) !== -1) return '#';
-		} else if (this.currentKey.accidental === '&') {
-			const affected = flats.slice(0, this.currentKey.count);
-			if (affected.indexOf(note) !== -1) return '&';
-		}
-
-		return '%'; // Natural
-	}
 }
 
 // --- Layout Engine ---
@@ -152,30 +103,17 @@ export class LayoutEngine {
 		});
 
 		// 1. Flatten Lyrics
-		const lyricItems: ({ kind: 'Beat', beat: AST.Beat } | { kind: 'Barline', measureIndex: number })[] = [];
-
-		block.lyricLines.forEach(line => {
-			line.measures.forEach((meas, mIdx) => {
-				meas.beats.forEach(beat => lyricItems.push({ kind: 'Beat', beat }));
-				if (meas.barline) lyricItems.push({ kind: 'Barline', measureIndex: mIdx });
-			});
-		});
+		const lyricItems = flattenLyrics(block);
 
 		// 2. Flatten Pitches
-		const pitchQueue: (AST.Pitch | AST.Chord | AST.Directive | 'Barline')[] = [];
-		block.pitchLines.forEach(pLine => {
-			pLine.measures.forEach(meas => {
-				meas.elements.forEach(el => pitchQueue.push(el));
-				if (meas.barline) pitchQueue.push('Barline');
-			});
-		});
+		const pitchQueue = flattenPitches(block);
 
 		// State
 		const keySig = new KeySignatureState();
+		const pitchState = new PitchState();
 		let pitchIdx = 0;
 		// Default Start: Reference G4 (O4).
 		// User Spec: "reference prior pitch to C4".
-		let prevPitch = { letter: 'c', octave: 4 };
 		let referenceOctave = 4;
 
 		let counter = 1;
@@ -258,19 +196,14 @@ export class LayoutEngine {
 						if (dir.type === 'K') {
 							keySig.setKey(dir.accidental, dir.count);
 						} else if (dir.type === 'O') {
-							// Update Reference only (Visual Change)
-							// Spec: "reference prior pitch to C<n>" -> REMOVED per user feedback
 							referenceOctave = dir.octave;
-							// prevPitch = { letter: 'c', octave: dir.octave }; // REMOVED
+							pitchState.setReferenceOctave(dir.octave);
 
 							// Visual Marker for Octave Change
-
-							// Visual Marker for Octave Change
-							// User requested "G<n>" style
 							cmds.push({
 								type: 'text',
-								x: localX - 15, // Draw slightly left of the note
-								y: centerLineY + 5, // Align with Center Line (Visual G)
+								x: localX - 15,
+								y: centerLineY + 5,
 								text: `G${dir.octave}`,
 								font: 'italic bold 14px serif',
 								color: '#888'
@@ -284,42 +217,27 @@ export class LayoutEngine {
 					if (pEl && pEl !== 'Barline' && (pEl as any).kind) {
 						const element = pEl as (AST.Pitch | AST.Chord);
 
-						const renderPitch = (p: AST.Pitch, xOffset: number = 0) => {
-							const letter = p.note;
-							const prevIdx = this.pitchIndex(prevPitch.letter);
-							const currIdx = this.pitchIndex(letter);
-							let oct = prevPitch.octave;
-
-							const diff = currIdx - prevIdx;
-							if (diff > 3) oct--;
-							else if (diff < -3) oct++;
-
-							oct += p.octaveShift;
-
-							prevPitch = { letter, octave: oct };
-
-							const acc = keySig.getAccidental(letter, oct, p.accidental);
+						const renderNoteHelper = (note: string, oct: number, accStr: string | null, xOffset: number) => {
+							const acc = keySig.getAccidental(note, oct, accStr);
 							let color = 'black';
-
-							// Red for sharps, Blue for flats. 
 							if (acc === '#' || acc === '##') color = '#d00';
 							if (acc === '&' || acc === '&&') color = '#00d';
 
-							const y = getPitchY(centerLineY, oct, letter, acc, referenceOctave);
-
-							cmds.push({ type: 'text', x: localX + xOffset, y: y, text: letter, color, font: 'bold 16px sans-serif' });
+							const y = getPitchY(centerLineY, oct, note, acc, referenceOctave);
+							cmds.push({ type: 'text', x: localX + xOffset, y: y, text: note, color, font: 'bold 16px sans-serif' });
 						};
 
 						if (element.kind === 'Chord') {
-							element.pitches.forEach((p, i) => {
-								// Staggered Chord Rendering
-								// Even index: Right (+4)
-								// Odd index: Left (-4)
+							const chordPitches = pitchState.calculateChordPitches(element);
+							chordPitches.forEach((p, i) => {
 								const offset = (i % 2 === 0) ? 4 : -4;
-								renderPitch(p, offset);
+								renderNoteHelper(p.note, p.octave, p.accidental, offset);
 							});
 						} else {
-							renderPitch(element);
+							// Single Pitch
+							const p = element as AST.Pitch;
+							const { note, octave } = pitchState.calculatePitch(p.note, p.octaveShift);
+							renderNoteHelper(note, octave, p.accidental, 0);
 						}
 
 						pitchIdx++;
@@ -350,8 +268,4 @@ export class LayoutEngine {
 		};
 	}
 
-	private pitchIndex(letter: string): number {
-		const order = ['c', 'd', 'e', 'f', 'g', 'a', 'b'];
-		return order.indexOf(letter);
-	}
 }

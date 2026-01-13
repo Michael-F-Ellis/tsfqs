@@ -1,4 +1,4 @@
-import { TokenType } from './token.js';
+import { TokenType } from './token';
 
 export interface SourceLocation {
 	line: number;

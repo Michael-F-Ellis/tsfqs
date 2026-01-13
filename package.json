@@ -2,6 +2,7 @@
   "name": "tsfqs",
   "version": "1.0.0",
   "description": "miniFQS re-written with TypeScript.",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,5 +12,9 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^25.0.6"
+  },
+  "dependencies": {
+    "midi-player-js": "^2.0.16",
+    "soundfont-player": "^0.12.0"
   }
 }

@@ -1,5 +1,5 @@
-import { Token, TokenType } from './token.js';
-import * as AST from './ast.js';
+import { Token, TokenType } from './token';
+import * as AST from './ast';
 
 export class Parser {
 	private tokens: Token[];
@@ -168,7 +168,7 @@ export class Parser {
 			pitchMeasures.push(...pLine.measures);
 			pitchDirectives.push(...pLine.directives);
 
-			if (this.check(TokenType.Newline)) this.advance();
+
 		}
 
 		const pitchLine: AST.PitchLine = {
