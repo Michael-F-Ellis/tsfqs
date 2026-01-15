@@ -1,4 +1,4 @@
-import { ScoreLayout, BlockLayout, RenderCommand } from './layout-types';
+import { ScoreLayout, BlockLayout, RenderCommand } from './layout-types.js';
 
 export class Renderer {
 

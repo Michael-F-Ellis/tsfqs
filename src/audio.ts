@@ -1,8 +1,8 @@
-import * as AST from './ast';
-import { PitchState, KeySignatureState, flattenLyrics, flattenPitches, LyricItem, PitchQueueItem } from './sequencing';
-import { writeMidiFile, MidiTrack, MidiEvent } from './midi-writer';
+import * as AST from './ast.js';
+import { PitchState, KeySignatureState, flattenLyrics, flattenPitches, LyricItem, PitchQueueItem } from './sequencing.js';
+import { writeMidiFile, MidiTrack, MidiEvent } from './midi-writer.js';
 
-import { BEAT_MULTIPLIERS } from './constants';
+import { BEAT_MULTIPLIERS } from './constants.js';
 
 const PPQ = 480;
 
@@ -124,6 +124,19 @@ export class AudioGenerator {
 						if (qItem === 'Barline') break;
 					}
 					keySig.resetMeasure();
+					return;
+				}
+
+				if (item.kind === 'Directive') {
+					// Handle T directives if they appear here?
+					const el = item.directive;
+					if (el.type === 'T') {
+						currentTempo = el.bpm;
+						updateTempo();
+					} else if (el.type === 'B') {
+						currentBeatDuration = el.duration;
+						updateTempo();
+					}
 					return;
 				}
 

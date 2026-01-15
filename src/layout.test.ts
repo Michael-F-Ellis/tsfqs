@@ -56,6 +56,27 @@ const tests = [
         
         Do** La** | 2Se**Me** | Do ; ; |
         [K0] ^cb&b a&ag |  &gfe &ed&d | c |`
+	},
+	{
+		name: "Test 5: Separators",
+		input: `Title: Separators
+        
+        Dot (Space): Hap.py | Comma (Connect): Hap,py |
+        [K0] c c | c c |`
+	},
+	{
+		name: "Test 6: Key Color",
+		input: `Title: Key Color
+        
+        Fa |
+        [K#1] f |`
+	},
+	{
+		name: "Test 7: Pickup Count",
+		input: `Title: Pickup
+        
+        [N3] Hap | py - |
+        [K0] c | c - |`
 	}
 ];
 

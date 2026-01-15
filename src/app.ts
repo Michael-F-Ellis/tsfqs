@@ -1,11 +1,11 @@
 
-import { Lexer } from './lexer';
-import { Parser } from './parser';
-import { LayoutEngine } from './layout';
-import { Renderer } from './renderer';
-import { AudioGenerator } from './audio';
-import { Score, MusicBlock } from './ast';
-import { ScoreLayout, BlockLayout } from './layout-types';
+import { Lexer } from './lexer.js';
+import { Parser } from './parser.js';
+import { LayoutEngine } from './layout.js';
+import { Renderer } from './renderer.js';
+import { AudioGenerator } from './audio.js';
+import { Score, MusicBlock } from './ast.js';
+import { ScoreLayout, BlockLayout } from './layout-types.js';
 // @ts-ignore
 import MidiPlayer from 'midi-player-js';
 // @ts-ignore
@@ -24,11 +24,12 @@ interface BlockState {
 
 const EXAMPLE_SCORE = `Example Score
 
-[T120 B4] Happy Birthday to You |
-[K&1 O4] cc d c f | e |
+[N3 T120 B4] Hap,py | Birth day to | You - Hap,py | Birth day to | You - Hap,py |
+[K&1 O4] cc | d c f | e cc | d c ^g| f  cc |
 
-[T120] Happy Birthday to You |
-[K&1] cc d c g | f |`;
+Birth day dear | some one Hap,py | Birth day to | You - - |
+[K&1] ^c a f | e d ^bb |a f g | f |`;
+
 
 let blocks: BlockState[] = [];
 let audioContext: AudioContext | null = null;
@@ -321,7 +322,7 @@ document.getElementById('download-btn')?.addEventListener('click', () => {
 	try {
 		const gen = new AudioGenerator();
 		const bytes = gen.generateMidi(parsedScore);
-		const blob = new Blob([bytes], { type: 'audio/midi' });
+		const blob = new Blob([bytes as any], { type: 'audio/midi' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;

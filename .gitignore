@@ -8,3 +8,8 @@ yarn-debug.log*
 yarn-error.log*
 .vscode/
 .idea/
+
+# Build Artifacts
+src/*.js
+layout_verify.html
+*.mid

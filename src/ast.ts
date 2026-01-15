@@ -1,4 +1,4 @@
-import { TokenType } from './token';
+import { TokenType } from './token.js';
 
 export interface SourceLocation {
 	line: number;
@@ -92,6 +92,8 @@ export type SubdivisionType = 'Syllable' | 'Melisma' | 'Hyphen' | 'Rest' | 'Part
 export interface Subdivision {
 	type: SubdivisionType;
 	text: string; // The syllable text, or *, -, ;, _
+
+	separator?: '.' | ','; // The separator following this subdivision (if any)
 	location: SourceLocation;
 }
 

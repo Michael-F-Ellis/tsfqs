@@ -1,4 +1,4 @@
-import * as AST from './ast';
+import * as AST from './ast.js';
 
 // --- Key Sig ---
 
@@ -166,11 +166,15 @@ export class PitchState {
 
 export type LyricItem =
 	| { kind: 'Beat', beat: AST.Beat }
-	| { kind: 'Barline', measureIndex: number };
+	| { kind: 'Barline', measureIndex: number }
+	| { kind: 'Directive', directive: AST.Directive };
 
 export function flattenLyrics(block: AST.MusicBlock): LyricItem[] {
 	const items: LyricItem[] = [];
 	block.lyricLines.forEach(line => {
+		if (line.directives) {
+			line.directives.forEach(d => items.push({ kind: 'Directive', directive: d }));
+		}
 		line.measures.forEach((meas, mIdx) => {
 			meas.beats.forEach(beat => items.push({ kind: 'Beat', beat }));
 			if (meas.barline) items.push({ kind: 'Barline', measureIndex: mIdx });
@@ -184,6 +188,9 @@ export type PitchQueueItem = AST.Pitch | AST.Chord | AST.Directive | 'Barline';
 export function flattenPitches(block: AST.MusicBlock): PitchQueueItem[] {
 	const queue: PitchQueueItem[] = [];
 	block.pitchLines.forEach(pLine => {
+		if (pLine.directives) {
+			pLine.directives.forEach(d => queue.push(d));
+		}
 		pLine.measures.forEach(meas => {
 			meas.elements.forEach(el => queue.push(el));
 			if (meas.barline) queue.push('Barline');

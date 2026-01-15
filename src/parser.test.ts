@@ -100,3 +100,28 @@ try {
 		console.error(`Test 3 Failed: Unexpected error message: ${e.message}`);
 	}
 }
+
+
+// Test 4: Comma support
+console.log("Test 4: Comma Support");
+const input5 = `Title
+  
+  [N3] Hap,py |
+  [K0] c c |
+  `;
+const parser5 = new Parser(new Lexer(input5).getAllTokens());
+try {
+	const score5 = parser5.parseScore();
+	const beats = score5.blocks[0].lyricLines[0].measures[0].beats[0].elements;
+	if (beats.length !== 2) console.error(`Test 4 Failed: Beat element count. Got ${beats.length}`);
+	const s1 = beats[0] as any;
+	if (s1.text !== 'Hap') console.error(`Test 4 Failed: Syllable 1 text. Got ${s1.text}`);
+	if (s1.separator !== ',') console.error(`Test 4 Failed: Syllable 1 separator. Got ${s1.separator}`);
+
+	const s2 = beats[1] as any;
+	if (s2.text !== 'py') console.error(`Test 4 Failed: Syllable 2 text. Got ${s2.text}`);
+
+	console.log("Test 4 Completed (if no errors above)");
+} catch (e: any) {
+	console.error(`Test 4 Failed (Exception): ${e.message}`);
+}

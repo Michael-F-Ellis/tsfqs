@@ -8,6 +8,7 @@ export enum TokenType {
 	LParen = 'LParen',
 	RParen = 'RParen',
 	Dot = 'Dot',
+	Comma = 'Comma',
 	Hyphen = 'Hyphen',
 	Underscore = 'Underscore',
 	Asterisk = 'Asterisk',

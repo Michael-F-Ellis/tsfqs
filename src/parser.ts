@@ -1,5 +1,5 @@
-import { Token, TokenType } from './token';
-import * as AST from './ast';
+import { Token, TokenType } from './token.js';
+import * as AST from './ast.js';
 
 export class Parser {
 	private tokens: Token[];
@@ -234,10 +234,22 @@ export class Parser {
 				continue;
 			}
 
-			if (token.type === TokenType.Dot) {
-				this.advance();
-				prevEndCol = token.endCol;
-				continue; // Just a separator
+			if (token.type === TokenType.Dot || token.type === TokenType.Comma) {
+				const sepToken = this.advance();
+				// Attach separator to the last subdivision if available
+				if (currentSubdivisions.length > 0) {
+					const last = currentSubdivisions[currentSubdivisions.length - 1];
+					// Check if it's a subdivision (has 'type' property that matches SubdivisionType, or just check it's not a Directive?)
+					// Directives also have 'type' but it's 'N', 'B', etc.
+					// AST.Subdivision types: Syllable, Melisma, Hyphen, Rest, Partial, Space, Chord.
+					// Directives: N, B, T, K, O, I, V.
+					// We can just cast for now or check 'text' property? Directives don't have 'text'.
+					if ('text' in last) {
+						(last as AST.Subdivision).separator = sepToken.type === TokenType.Comma ? ',' : '.';
+					}
+				}
+				prevEndCol = sepToken.endCol;
+				continue;
 			}
 
 			// Subdivisions

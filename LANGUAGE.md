@@ -18,7 +18,7 @@ Example 1:
 ```
 Happy Birthday
  
-[N3] Hap.py | birth day to | you - ; |
+[N3] Hap,py | birth day to | you - ; |
 [K&1] cc | d c f | e |
 ```
 
@@ -40,8 +40,9 @@ The lyric line defines the rhythm of the music and the lyrics to be sung (for vo
 -   **Syllables**: Text segments to be sung (e.g., `Hap`, `py`).
 -   **Barlines**: `|` delimits measures. **Must** be present at the end of the line.
 -   **Beat Separators**: whitespace separates beats.
--   **Syllable Separator**: `.` separates syllables within a single beat (e.g., `Hap.py` puts "Hap" and "py" in the same beat).
--   **Special Characters**: Each of these counts as a beat subdivision.
+-   **Syllable Separator**: `.` separates syllables within a single beat. `,` is also a separator.
+    -   `,` (Comma): Separates syllables that are part of the same word (e.g., `Hap,py` renders as "Happy").
+    -   `.` (Dot): Separates distinct words within a single beat (e.g., `in.ex` renders as "in ex").
     -   `-`: Hyphen (continuation of a note or rest subdivision).
     -   `*`: Asterisk (melisma) continues a syllable with change of pitch.  Does not require a `.` to separate from the previous subdivision,e.g, `Glo*** o*ri* a -`Instrumental scores will use this to indicate each attack, e.g., `**** **** * -` for the same rhythm as the previous example.
     -   `_`: Underscore (Silent Subdivision). Counts as a beat subdivision but represents truncation of the beat.

@@ -1,7 +1,7 @@
-import * as AST from './ast';
-import { BlockLayout, CommandType, RenderCommand, ScoreLayout } from './layout-types';
-import { KeySignatureState, PitchState, flattenLyrics, flattenPitches, LyricItem, PitchQueueItem } from './sequencing';
-import { BEAT_MULTIPLIERS, LAYOUT_CONSTANTS } from './constants';
+import * as AST from './ast.js';
+import { BlockLayout, CommandType, RenderCommand, ScoreLayout } from './layout-types.js';
+import { KeySignatureState, PitchState, flattenLyrics, flattenPitches, LyricItem, PitchQueueItem } from './sequencing.js';
+import { BEAT_MULTIPLIERS, LAYOUT_CONSTANTS } from './constants.js';
 
 // --- Pitch Helpers ---
 
@@ -142,6 +142,16 @@ export class LayoutEngine {
 				return;
 			}
 
+			if (item.kind === 'Directive') {
+				const el = item.directive;
+				if (el.type === 'T') {
+					cmds.push({ type: 'text', x: cursorX, y: staffTopY - 30, text: `T${el.bpm}`, font: '12px sans-serif' });
+				} else if (el.type === 'N') {
+					counter = el.count;
+				}
+				return;
+			}
+
 			// Process Beat
 			const beat = item.beat;
 			// Determine durations and prefixes
@@ -149,15 +159,22 @@ export class LayoutEngine {
 
 			let currentDuration = 1;
 
-			// Check directives 
+			// Check directives (always process)
 			beat.elements.forEach(el => {
 				if ('type' in el && (el.type === 'N' || el.type === 'B' || el.type === 'T')) {
 					if (el.type === 'T') {
 						cmds.push({ type: 'text', x: cursorX, y: staffTopY - 30, text: `T${el.bpm}`, font: '12px sans-serif' });
+					} else if (el.type === 'N') {
+						counter = el.count;
 					}
-					// N and B could be handled here for state
+					// B could be handled here for state
 				}
 			});
+
+			if (subDivs.length === 0) {
+				// Standalone directive beat? Don't render counter or advance invalidly
+				return;
+			}
 
 			// Prefix Check 
 			if (subDivs.length > 0 && subDivs[0].type === 'Syllable') {
@@ -245,6 +262,13 @@ export class LayoutEngine {
 				}
 
 				localX += subWidth;
+
+				// Separator Spacing
+				if (sub.separator === '.') {
+					// Render Period
+					cmds.push({ type: 'text', x: localX, y: lyricY, text: '.', font: '16px monospace', color: 'black' });
+					localX += fw;
+				}
 			});
 
 			// Render Counter

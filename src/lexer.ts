@@ -1,4 +1,4 @@
-import { Token, TokenType } from './token';
+import { Token, TokenType } from './token.js';
 
 export class Lexer {
 	private input: string;
@@ -65,6 +65,7 @@ export class Lexer {
 			case '(': this.advance(); return { type: TokenType.LParen, value: '(', line: startLine, col: startCol, endCol: startCol + 1 };
 			case ')': this.advance(); return { type: TokenType.RParen, value: ')', line: startLine, col: startCol, endCol: startCol + 1 };
 			case '.': this.advance(); return { type: TokenType.Dot, value: '.', line: startLine, col: startCol, endCol: startCol + 1 };
+			case ',': this.advance(); return { type: TokenType.Comma, value: ',', line: startLine, col: startCol, endCol: startCol + 1 };
 			case '-': this.advance(); return { type: TokenType.Hyphen, value: '-', line: startLine, col: startCol, endCol: startCol + 1 };
 			case '_': this.advance(); return { type: TokenType.Underscore, value: '_', line: startLine, col: startCol, endCol: startCol + 1 };
 			case '*': this.advance(); return { type: TokenType.Asterisk, value: '*', line: startLine, col: startCol, endCol: startCol + 1 };
@@ -108,8 +109,7 @@ export class Lexer {
 		while (this.peek() !== null) {
 			const c = this.peek()!;
 			if (/[0-9 \t\r\n]/.test(c)) break; // Digit or whitespace
-			if (/[|\[\]().\-_*^/;=:%#&]/.test(c)) break; // Symbol
-			if (c === ':') break; // Colon
+			if (/[|\[\]().,\-_*^/;=:%#&]/.test(c)) break; // Symbol
 
 			value += this.advance();
 		}

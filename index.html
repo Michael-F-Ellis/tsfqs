@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -17,7 +18,8 @@
             background-color: var(--bg-color);
             margin: 0;
             padding: 0;
-            padding-bottom: 80px; /* Space for footer */
+            padding-bottom: 80px;
+            /* Space for footer */
         }
 
         #app {
@@ -44,7 +46,7 @@
         }
 
         .music-block:hover {
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .music-block.editing {
@@ -101,7 +103,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
         }
 
@@ -123,7 +125,7 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         button.icon-btn:disabled {
             background: #ccc;
         }
@@ -153,37 +155,48 @@
             text-align: center;
         }
     </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "midi-player-js": "https://esm.sh/midi-player-js",
+        "soundfont-player": "https://esm.sh/soundfont-player"
+      }
+    }
+    </script>
 </head>
+
 <body>
 
-<div id="app">
-    <div class="meta-info">
-        <h1>miniFQS Draft</h1>
-        <p>Tap blocks to edit. Tap between blocks to add.</p>
-    </div>
-    
-    <div id="score-container" class="block-list">
-        <!-- Blocks Rendered Here -->
-    </div>
-    
-    <div class="add-block-area" id="append-block-btn">
-        + Add Block at End
-    </div>
-</div>
+    <div id="app">
+        <div class="meta-info">
+            <h1>miniFQS Draft</h1>
+            <p>Tap blocks to edit. Tap between blocks to add.</p>
+        </div>
 
-<div class="player-bar">
-    <div class="controls">
-        <button id="play-btn" class="icon-btn">▶</button>
-        <button id="stop-btn" class="icon-btn">◼</button>
-    </div>
-    <div class="scrubber" id="scrubber">
-        <div class="progress-fill" id="progress-fill"></div>
-    </div>
-    <div class="extras">
-        <button id="download-btn" style="background:none; border:none; color:#007bff; cursor:pointer;">⬇ MIDI</button>
-    </div>
-</div>
+        <div id="score-container" class="block-list">
+            <!-- Blocks Rendered Here -->
+        </div>
 
-<script type="module" src="/src/app.ts"></script>
+        <div class="add-block-area" id="append-block-btn">
+            + Add Block at End
+        </div>
+    </div>
+
+    <div class="player-bar">
+        <div class="controls">
+            <button id="play-btn" class="icon-btn">▶</button>
+            <button id="stop-btn" class="icon-btn">◼</button>
+        </div>
+        <div class="scrubber" id="scrubber">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="extras">
+            <button id="download-btn" style="background:none; border:none; color:#007bff; cursor:pointer;">⬇
+                MIDI</button>
+        </div>
+    </div>
+
+    <script type="module" src="/src/app.js"></script>
 </body>
+
 </html>
