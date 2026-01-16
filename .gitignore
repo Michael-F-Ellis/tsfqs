@@ -13,3 +13,6 @@ yarn-error.log*
 src/*.js
 layout_verify.html
 *.mid
+
+# User Sandbox
+sandbox/
