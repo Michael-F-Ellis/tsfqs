@@ -70,7 +70,8 @@ export class LayoutEngine {
 					y: 50 + (i * 30),
 					text: line,
 					font: 'bold 24px monospace',
-					color: 'black'
+					color: 'black',
+					anchor: 'middle'
 				});
 			});
 		}
@@ -88,7 +89,7 @@ export class LayoutEngine {
 		let cursorX = LAYOUT_CONSTANTS.BASE_MARGIN;
 
 		// Rows Y positions
-		const startY = 50;
+		const startY = 10;
 		const staffTopY = startY;
 		const centerLineY = staffTopY + LAYOUT_CONSTANTS.STAFF_LINE_SPACING; // G4 (Octave 0)
 
@@ -288,7 +289,7 @@ export class LayoutEngine {
 		return {
 			commands: cmds,
 			width: cursorX,
-			height: counterY + 50
+			height: counterY + 15
 		};
 	}
 

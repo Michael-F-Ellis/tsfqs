@@ -312,10 +312,97 @@ function addBlock(index: number) {
 	renderUI();
 }
 
+// --- Action Bar Handlers ---
+
+function handleLoad() {
+	const input = document.getElementById('file-input') as HTMLInputElement;
+	input.click();
+
+	input.onchange = (e) => {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+
+		const reader = new FileReader();
+		reader.onload = (e) => {
+			const content = e.target?.result as string;
+			if (content) {
+				// Naive split by double newline
+				const chunks = content.split(/\n\s*\n/);
+				blocks = chunks.map(c => ({
+					id: crypto.randomUUID(),
+					content: c.trim(),
+					isEditing: false
+				}));
+				updateGlobalLayout();
+				renderUI();
+			}
+		};
+		reader.readAsText(file);
+	};
+}
+
+async function handleSave() {
+	const fullSource = blocks.map(b => b.content).join('\n\n');
+
+	// Modern API (Desktop Chrome/Edge, etc.)
+	if ('showSaveFilePicker' in window) {
+		try {
+			const handle = await (window as any).showSaveFilePicker({
+				suggestedName: 'score.fqs',
+				types: [{
+					description: 'miniFQS Score',
+					accept: { 'text/plain': ['.fqs'] },
+				}],
+			});
+			const writable = await handle.createWritable();
+			await writable.write(fullSource);
+			await writable.close();
+			return; // Success
+		} catch (err: any) {
+			if (err.name === 'AbortError') return; // User cancelled
+			console.warn("File System Access API failed, falling back to download", err);
+			// Fall through to fallback
+		}
+	}
+
+	// Fallback (Mobile, Firefox, Safari)
+	const filename = prompt("Save Score As:", "score.fqs");
+	if (!filename) return; // User cancelled
+
+	const blob = new Blob([fullSource], { type: 'text/plain' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+function handlePrint() {
+	window.print();
+}
+
+function handleClear() {
+	if (confirm("Are you sure you want to clear the score?")) {
+		blocks = [{
+			id: crypto.randomUUID(),
+			content: "New Score",
+			isEditing: true
+		}];
+		updateGlobalLayout();
+		renderUI();
+	}
+}
+
 // Listeners
 document.getElementById('append-block-btn')?.addEventListener('click', () => {
 	addBlock(blocks.length);
 });
+
+document.getElementById('load-btn')?.addEventListener('click', handleLoad);
+document.getElementById('save-btn')?.addEventListener('click', handleSave);
+document.getElementById('print-btn')?.addEventListener('click', handlePrint);
+document.getElementById('clear-btn')?.addEventListener('click', handleClear);
 
 document.getElementById('download-btn')?.addEventListener('click', () => {
 	if (!parsedScore) return;

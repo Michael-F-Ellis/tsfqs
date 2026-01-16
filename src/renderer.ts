@@ -13,7 +13,13 @@ export class Renderer {
 		// "title: RenderCommand[]".
 		// Let's make an SVG just for the title if it exists.
 		if (layout.title.length > 0) {
-			html += this.renderSVG(layout.title, 800, 100);
+			// Extract text from commands (assuming simple text commands for title)
+			const titleLines = layout.title.filter(c => c.type === 'text').map(c => c.text);
+			if (titleLines.length > 0) {
+				html += `<div style="text-align: center; font-family: monospace; font-weight: bold; font-size: 24px; margin-bottom: 20px;">
+					${titleLines.join('<br>')}
+				</div>`;
+			}
 		}
 
 		// Render Blocks
@@ -35,7 +41,7 @@ export class Renderer {
 		const w = Math.max(width, 100);
 		const h = Math.max(height, 50);
 
-		let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg" style="border: 1px solid #eee; margin-bottom: 20px; display: block;">`;
+		let svg = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 5px; display: block;">`;
 		svg += '<style>text { font-family: monospace; }</style>'; // Ensure monospace fallback
 
 		commands.forEach(cmd => {
@@ -49,7 +55,7 @@ export class Renderer {
 					style += `font: ${cmd.font};`;
 				}
 
-				svg += `<text x="${cmd.x}" y="${cmd.y}" fill="${cmd.color || 'black'}" style="${style}">${cmd.text}</text>`;
+				svg += `<text x="${cmd.x}" y="${cmd.y}" fill="${cmd.color || 'black'}" style="${style}" text-anchor="${cmd.anchor || 'start'}">${cmd.text}</text>`;
 			} else if (cmd.type === 'rect') {
 				svg += `<rect x="${cmd.x}" y="${cmd.y}" width="${cmd.width}" height="${cmd.height}" fill="${cmd.fill || 'none'}" stroke="black" />`;
 			}

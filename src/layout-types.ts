@@ -7,6 +7,7 @@ export interface RenderCommand {
 	color?: string;
 	font?: string;
 	text?: string;
+	anchor?: string; // 'start', 'middle', 'end'
 	// For lines
 	x2?: number;
 	y2?: number;
