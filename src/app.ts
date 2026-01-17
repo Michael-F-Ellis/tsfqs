@@ -10,6 +10,7 @@ import { ScoreLayout, BlockLayout } from './layout-types.js';
 import MidiPlayer from 'midi-player-js';
 // @ts-ignore
 import Soundfont from 'soundfont-player';
+import { GM_INSTRUMENTS } from './constants.js';
 
 // --- Types ---
 
@@ -34,7 +35,8 @@ Birth day dear | some one Hap,py | Birth day to | You - - |
 let blocks: BlockState[] = [];
 let audioContext: AudioContext | null = null;
 let midiPlayer: any = null;
-let soundfontPlayer: any = null;
+let instrumentPlayerMap = new Map<number, any>();
+let currentInstrumentProgram = 0;
 let isPlaying = false;
 
 // We store the full parse result to render each block
@@ -55,12 +57,7 @@ function getTicksForPoint(point: string): number {
 function getSortedPoints(): number[] {
 	if (!beatTimingMap) return [];
 	const ticks = Array.from(loopPoints).map(p => beatTimingMap!.get(p)!);
-	// Sort logic depends on user intent strictly? Or just chronological?
-	// User wants "Wrap" if Start > End.
-	// So we preserve insertion order? Or user explicitly selects Start then End?
-	// Let's use insertion order converted to ticks.
-	// Set iterates in insertion order.
-	return ticks;
+	return ticks.sort((a, b) => a - b);
 }
 
 // --- Init ---
@@ -85,7 +82,40 @@ async function initAudioContext() {
 	if (!audioContext) {
 		audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
 		await audioContext.resume();
-		soundfontPlayer = await Soundfont.instrument(audioContext, 'acoustic_grand_piano');
+	}
+
+	if (!parsedScore) return;
+
+	// Scan for instruments
+	const generator = new AudioGenerator();
+	const events = generator.generateEvents(parsedScore);
+	const usedPrograms = new Set<number>();
+	usedPrograms.add(0); // Always ensure Piano is available as fallback
+
+	for (const evt of events) {
+		if (evt.type === 'programChange' && evt.param1 !== undefined) {
+			usedPrograms.add(evt.param1);
+		}
+	}
+
+	// Load missing instruments
+	const loadPromises: Promise<void>[] = [];
+	for (const prog of usedPrograms) {
+		if (!instrumentPlayerMap.has(prog)) {
+			const name = GM_INSTRUMENTS[prog];
+			if (name) {
+				console.log(`Loading Instrument: ${name} (${prog})`);
+				loadPromises.push(
+					Soundfont.instrument(audioContext, name as any).then((player: any) => {
+						instrumentPlayerMap.set(prog, player);
+					}).catch((e: any) => console.error(`Failed to load ${name}`, e))
+				);
+			}
+		}
+	}
+
+	if (loadPromises.length > 0) {
+		await Promise.all(loadPromises);
 	}
 }
 
@@ -153,8 +183,14 @@ function handlePlay() {
 
 			if (!midiPlayer) {
 				midiPlayer = new MidiPlayer.Player((event: any) => {
-					if (event.name === 'Note on' && event.velocity > 0) {
-						soundfontPlayer.play(event.noteName, audioContext!.currentTime, { gain: event.velocity / 100 });
+					if (event.name === 'Program Change') {
+						currentInstrumentProgram = event.value;
+					}
+					else if (event.name === 'Note on' && event.velocity > 0) {
+						const player = instrumentPlayerMap.get(currentInstrumentProgram) || instrumentPlayerMap.get(0);
+						if (player) {
+							player.play(event.noteName, audioContext!.currentTime, { gain: event.velocity / 100 });
+						}
 					}
 				});
 
