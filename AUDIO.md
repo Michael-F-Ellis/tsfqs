@@ -96,6 +96,7 @@ $$ \text{Ticks} = (1/3) \times 1.5 \times 480 = 240 \text{ Ticks} $$
 ### 5.2 Libraries
 -   **MIDI Writer**: Custom strictly-typed writer (No external write dependencies).
 -   **Player**: `midi-player-js` (Event scheduler) + `soundfont-player` (Audio generation).
+    -   See [`MIDIPLAYER.md`](./MIDIPLAYER.md) for a succinct local reference of the `midi-player-js` API.
 
 ## 6. Verification
 ### 6.1 Simple Rhythm & Pitch Test

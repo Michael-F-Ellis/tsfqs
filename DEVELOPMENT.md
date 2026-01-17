@@ -33,3 +33,7 @@ To build and serve the web application locally (with caching disabled and auto-c
 ```
 
 This will serve the app at `http://127.0.0.1:8081`.
+
+## Resources
+
+-   **MidiPlayerJS API**: See [`MIDIPLAYER.md`](./MIDIPLAYER.md) for a quick reference of the player methods available for debugging and development.
