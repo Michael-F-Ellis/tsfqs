@@ -371,93 +371,114 @@ function renderUI() {
 		const div = document.createElement('div');
 		div.className = `music-block ${block.isEditing ? 'editing' : ''}`;
 
+		// ALWAYS RENDER CONTENT (Viewer)
+		if (currentLayout) {
+			const renderer = new Renderer();
+
+			// If this is the FIRST block, check if we have a title to render
+			if (index === 0 && currentLayout.title.length > 0) {
+				const isMusic = block.content.includes('[') || block.content.includes('|');
+
+				if (!isMusic) {
+					// Likely Title. Render Title SVG from layout if available.
+					const titleLayout = { title: currentLayout.title, blocks: [] };
+					div.innerHTML = renderer.renderScore(titleLayout);
+				} else {
+					// Music Block.
+					if (musicBlockIndex < currentLayout.blocks.length) {
+						const blk = currentLayout.blocks[musicBlockIndex];
+						musicBlockIndex++;
+						const blkLayout = { title: [], blocks: [blk] };
+						div.innerHTML = renderer.renderScore(blkLayout);
+					} else {
+						div.textContent = "(No render output)";
+					}
+				}
+			} else {
+				// Subsequent blocks
+				const isMusic = block.content.includes('[') || block.content.includes('|');
+				if (isMusic) {
+					if (musicBlockIndex < currentLayout.blocks.length) {
+						const blk = currentLayout.blocks[musicBlockIndex];
+						musicBlockIndex++;
+						const blkLayout = { title: [], blocks: [blk] };
+						div.innerHTML = renderer.renderScore(blkLayout);
+					} else {
+						div.textContent = "(No render output - Mismatch?)";
+					}
+				} else {
+					// Text block but not music
+					div.textContent = block.content;
+				}
+			}
+		} else {
+			div.textContent = "(Parse Error)";
+		}
+
+
 		if (block.isEditing) {
 			// EDITOR
 			const textarea = document.createElement('textarea');
 			textarea.className = 'block-editor';
 			textarea.value = block.content;
 
-			setTimeout(() => {
-				textarea.style.height = 'auto';
-				textarea.style.height = textarea.scrollHeight + 'px';
-				textarea.focus();
-			}, 0);
+			// Restoration Logic
+			if (editorFocusState && editorFocusState.index === index) {
+				// We need to wait for DOM insertion? Usually not if we do it synchronously
+				// But focus() might need timeout.
+				setTimeout(() => {
+					textarea.style.height = 'auto'; // Reset to recurse
+					textarea.style.height = textarea.scrollHeight + 'px';
+					textarea.focus();
+					textarea.setSelectionRange(editorFocusState!.selectionStart, editorFocusState!.selectionEnd);
+					textarea.scrollTop = editorFocusState!.scrollTop;
+					editorFocusState = null; // Consume
+				}, 0);
+			} else {
+				// Normal Open
+				setTimeout(() => {
+					textarea.style.height = 'auto';
+					textarea.style.height = textarea.scrollHeight + 'px';
+					textarea.focus();
+				}, 0);
+			}
+
+
+			const btnContainer = document.createElement('div');
+			btnContainer.style.display = 'flex';
+			btnContainer.style.gap = '10px';
+			btnContainer.style.marginTop = '5px';
 
 			const saveBtn = document.createElement('button');
 			saveBtn.textContent = 'Done';
-			saveBtn.style.marginTop = '5px';
+			saveBtn.className = 'action-btn'; // Recycle style
 			saveBtn.onclick = (e) => {
 				e.stopPropagation();
-				saveBlock(index, textarea.value);
+				saveBlock(index, textarea.value, true);
 			};
 
+			const updateBtn = document.createElement('button');
+			updateBtn.textContent = 'Update';
+			updateBtn.className = 'action-btn';
+			updateBtn.onclick = (e) => {
+				e.stopPropagation();
+				// Capture State
+				editorFocusState = {
+					index: index,
+					selectionStart: textarea.selectionStart,
+					selectionEnd: textarea.selectionEnd,
+					scrollTop: textarea.scrollTop
+				};
+				saveBlock(index, textarea.value, false);
+			};
+
+			btnContainer.appendChild(saveBtn);
+			btnContainer.appendChild(updateBtn);
+
 			div.appendChild(textarea);
-			div.appendChild(saveBtn);
+			div.appendChild(btnContainer);
 		} else {
-			// VIEWER
-			// Render Content First
-			if (currentLayout) {
-				const renderer = new Renderer();
-
-				// If this is the FIRST block, check if we have a title to render
-				if (index === 0 && currentLayout.title.length > 0) {
-					// This block apparently generated the Title.
-					// Render Title SVG.
-					// (Hack: Renderer expects ScoreLayout to render title. We can just pass title commands only?)
-					// or create a temp layout.
-					// Renderer doesn't expose renderSVG public? It's private.
-					// We need to stick to public API or modify Renderer.
-					// Renderer.renderScore() renders EVERYTHING.
-					// We want to render PARTS.
-
-					// Actually, if we map everything 1:1, maybe we just want to look at the text?
-					// If text has `[` or `|`, it's likely a Music Block.
-					// If it doesn't, it's likely Title.
-
-					const isMusic = block.content.includes('[') || block.content.includes('|');
-
-					if (!isMusic) {
-						// Likely Title. Render Title SVG from layout if available.
-						// We can create a "Fake" ScoreLayout with only title.
-						const titleLayout = { title: currentLayout.title, blocks: [] };
-						div.innerHTML = renderer.renderScore(titleLayout);
-					} else {
-						// Music Block.
-						if (musicBlockIndex < currentLayout.blocks.length) {
-							const blk = currentLayout.blocks[musicBlockIndex];
-							musicBlockIndex++;
-							// Render just this block.
-							// Renderer has private renderBlock.
-							// We can construct a ScoreLayout with NO title and THIS block.
-							const blkLayout = { title: [], blocks: [blk] };
-							div.innerHTML = renderer.renderScore(blkLayout);
-						} else {
-							div.textContent = "(No render output)";
-						}
-					}
-				} else {
-					// Subsequent blocks (or first block if looked like music)
-					const isMusic = block.content.includes('[') || block.content.includes('|');
-					if (isMusic) {
-						if (musicBlockIndex < currentLayout.blocks.length) {
-							const blk = currentLayout.blocks[musicBlockIndex];
-							musicBlockIndex++;
-							const blkLayout = { title: [], blocks: [blk] };
-							div.innerHTML = renderer.renderScore(blkLayout);
-						} else {
-							div.textContent = "(No render output - Mismatch?)";
-						}
-					} else {
-						// Text block but not music?
-						// Maybe additional text paragraph?
-						div.textContent = block.content;
-					}
-				}
-			} else {
-				div.textContent = "(Parse Error)";
-			}
-
-			// Append Edit Overlay button AFTER rendering content
+			// VIEWER OVERLAY
 			const editBtn = document.createElement('div');
 			editBtn.className = 'edit-btn-overlay';
 			editBtn.textContent = '✏️ Edit';
@@ -466,8 +487,6 @@ function renderUI() {
 				startEditing(index);
 			}
 			div.appendChild(editBtn);
-
-			// div.onclick = () => startEditing(index); // REMOVED implicit click
 		}
 
 		list.appendChild(div);
@@ -536,6 +555,17 @@ function renderControls() {
 	// console.log("RenderControls. LoopEnabled:", isLoopEnabled);
 }
 
+
+// Cursor State for re-renders
+interface EditorState {
+	index: number;
+	selectionStart: number;
+	selectionEnd: number;
+	scrollTop: number;
+}
+let editorFocusState: EditorState | null = null;
+
+
 // --- Actions ---
 
 function startEditing(index: number) {
@@ -544,13 +574,15 @@ function startEditing(index: number) {
 	renderUI();
 }
 
-function saveBlock(index: number, newContent: string) {
+function saveBlock(index: number, newContent: string, closeEditor: boolean = true) {
 	const trimmed = newContent.trim();
 	if (trimmed.length === 0) {
 		blocks.splice(index, 1);
 	} else {
 		blocks[index].content = trimmed;
-		blocks[index].isEditing = false;
+		if (closeEditor) {
+			blocks[index].isEditing = false;
+		}
 	}
 	// Update Global Layout
 	updateGlobalLayout();
@@ -598,6 +630,7 @@ function handleLoad() {
 
 async function handleSave() {
 	const fullSource = blocks.map(b => b.content).join('\n\n');
+
 
 	// Modern API (Desktop Chrome/Edge, etc.)
 	if ('showSaveFilePicker' in window) {
