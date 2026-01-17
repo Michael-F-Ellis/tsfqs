@@ -74,6 +74,8 @@ function init() {
 	updateGlobalLayout();
 	renderUI();
 	setupAudio();
+	setupListeners();
+	console.log("miniFQS Initialized");
 }
 
 // --- Audio ---
@@ -652,16 +654,17 @@ async function handleDownloadMidi() {
 	}
 }
 
-// Listeners
-document.getElementById('append-block-btn')?.addEventListener('click', () => {
-	addBlock(blocks.length);
-});
+function setupListeners() {
+	document.getElementById('append-block-btn')?.addEventListener('click', () => {
+		addBlock(blocks.length);
+	});
 
-document.getElementById('load-btn')?.addEventListener('click', handleLoad);
-document.getElementById('save-btn')?.addEventListener('click', handleSave);
-document.getElementById('print-btn')?.addEventListener('click', handlePrint);
-document.getElementById('clear-btn')?.addEventListener('click', handleClear);
-document.getElementById('download-btn')?.addEventListener('click', handleDownloadMidi);
+	document.getElementById('load-btn')?.addEventListener('click', handleLoad);
+	document.getElementById('save-btn')?.addEventListener('click', handleSave);
+	document.getElementById('print-btn')?.addEventListener('click', handlePrint);
+	document.getElementById('clear-btn')?.addEventListener('click', handleClear);
+	document.getElementById('download-btn')?.addEventListener('click', handleDownloadMidi);
+}
 
 
 function toggleLoop() {
