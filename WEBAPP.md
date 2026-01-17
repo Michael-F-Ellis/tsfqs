@@ -7,7 +7,7 @@ The miniFQS Web App provides a complete environment for editing, listening, and 
 **Block-Based Editor Pattern**:
 -   The UI renders the score as a vertical list of interactive **Music Blocks**.
 -   **View Mode**: Shows the rendered SVG for the block.
--   **Edit Mode**: Clicking a block expands an editor *inline* (beneath or replacing the view) containing the source text for that specific block.
+-   **Edit Mode**: Clicking a block expands an editor *inline* beneath the view containing the source text for that specific block. The rendered SVG remains visible above the editor.
 -   **Creation**: Tapping in the empty space between blocks (or explicit "+" buttons) adds a new empty block.
 -   **Deletion**: Clearing the text of a block removes it from the document.
 
@@ -15,12 +15,14 @@ The miniFQS Web App provides a complete environment for editing, listening, and 
 1.  **Initial Load**: Parse full source -> Split into Blocks -> Render List.
 2.  **Tap Block**:
     -   Switch specific block to Edit Mode.
-    -   Show `<textarea>` populated with block source.
+    -   Show rendered SVG at top of block.
+    -   Show `<textarea>` populated with block source below SVG.
+    -   Show "Done" and "Update" buttons.
     -   Focus editor.
 3.  **Edit & Save**:
-    -   On `blur` or "Done" button: Parse block text.
-    -   If empty: Remove block.
-    -   Else: Update Block State -> Re-render SVG -> Switch to View Mode.
+    -   **Update**: Re-renders the SVG based on current text *without* closing the editor. Preserves cursor position and focus.
+    -   **Done**: Updates text, re-renders, and closes the editor.
+    -   If text is empty on Done/Save: Remove block.
 4.  **Playback**:
     -   **Fixed Bottom Bar**: Play/Stop/Pause controls stuck to the bottom of the viewport (z-index high).
     -   Progress Bar / Scrubber included in the bar.
