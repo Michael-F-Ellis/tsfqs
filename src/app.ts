@@ -36,6 +36,7 @@ let blocks: BlockState[] = [];
 let audioContext: AudioContext | null = null;
 let midiPlayer: any = null;
 let instrumentPlayerMap = new Map<number, any>();
+let activeAudioNodes = new Map<string, any>();
 let currentInstrumentProgram = 0;
 let isPlaying = false;
 
@@ -59,6 +60,17 @@ function getSortedPoints(): number[] {
 	const ticks = Array.from(loopPoints).map(p => beatTimingMap!.get(p)!);
 	return ticks.sort((a, b) => a - b);
 }
+
+function stopAllNotes() {
+	activeAudioNodes.forEach(node => {
+		try { node.stop(); } catch (e) { }
+	});
+	activeAudioNodes.clear();
+}
+
+
+
+
 
 // --- Init ---
 
@@ -160,6 +172,7 @@ function updateGlobalLayout() {
 function handlePlay() {
 	if (isPlaying) {
 		midiPlayer.stop();
+		stopAllNotes();
 		isPlaying = false;
 		renderControls();
 		return;
@@ -188,10 +201,33 @@ function handlePlay() {
 					if (event.name === 'Program Change') {
 						currentInstrumentProgram = event.value;
 					}
-					else if (event.name === 'Note on' && event.velocity > 0) {
-						const player = instrumentPlayerMap.get(currentInstrumentProgram) || instrumentPlayerMap.get(0);
-						if (player) {
-							player.play(event.noteName, audioContext!.currentTime, { gain: event.velocity / 100 });
+					else if (event.name === 'Note on') {
+						if (event.velocity > 0) {
+							// Note On
+							const player = instrumentPlayerMap.get(currentInstrumentProgram) || instrumentPlayerMap.get(0);
+							if (player) {
+								// Stop existing if any (re-trigger)
+								const existing = activeAudioNodes.get(event.noteName);
+								if (existing) {
+									try { existing.stop(); } catch (e) { }
+								}
+
+								const node = player.play(event.noteName, audioContext!.currentTime, { gain: event.velocity / 100 });
+								activeAudioNodes.set(event.noteName, node);
+							}
+						} else {
+							// Note Off (Velocity 0)
+							const node = activeAudioNodes.get(event.noteName);
+							if (node) {
+								try { node.stop(); } catch (e) { }
+								activeAudioNodes.delete(event.noteName);
+							}
+						}
+					} else if (event.name === 'Note off') {
+						const node = activeAudioNodes.get(event.noteName);
+						if (node) {
+							try { node.stop(); } catch (e) { }
+							activeAudioNodes.delete(event.noteName);
 						}
 					}
 				});
@@ -218,6 +254,7 @@ function handlePlay() {
 									midiPlayer.play();
 								} else {
 									midiPlayer.stop();
+									stopAllNotes();
 									isPlaying = false;
 									renderControls();
 								}
@@ -230,6 +267,7 @@ function handlePlay() {
 									midiPlayer.play();
 								} else {
 									midiPlayer.stop();
+									stopAllNotes();
 									isPlaying = false;
 									renderControls();
 								}
@@ -276,6 +314,7 @@ function handlePlay() {
 					}
 
 					isPlaying = false;
+					stopAllNotes();
 					renderControls();
 				});
 			}
