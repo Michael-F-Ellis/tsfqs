@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>miniFQS Reference</title>
+	<style>
+		:root {
+			--primary-color: #007bff;
+			--bg-color: #f8f9fa;
+			--text-color: #333;
+			--code-bg: #eee;
+		}
+
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			background-color: var(--bg-color);
+			color: var(--text-color);
+			line-height: 1.6;
+			margin: 0;
+			padding: 20px;
+			max-width: 800px;
+			margin: 0 auto;
+		}
+
+		h1,
+		h2,
+		h3 {
+			color: #2c3e50;
+		}
+
+		h1 {
+			border-bottom: 2px solid var(--primary-color);
+			padding-bottom: 10px;
+		}
+
+		h2 {
+			margin-top: 30px;
+			border-bottom: 1px solid #ccc;
+			padding-bottom: 5px;
+		}
+
+		code {
+			background-color: var(--code-bg);
+			padding: 2px 4px;
+			border-radius: 4px;
+			font-family: monospace;
+			font-size: 0.9em;
+		}
+
+		pre {
+			background-color: var(--code-bg);
+			padding: 15px;
+			border-radius: 8px;
+			overflow-x: auto;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			margin: 20px 0;
+			background: #fff;
+		}
+
+		th,
+		td {
+			text-align: left;
+			padding: 10px;
+			border-bottom: 1px solid #ddd;
+		}
+
+		th {
+			background-color: var(--primary-color);
+			color: white;
+		}
+
+		.gm-list {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+			gap: 10px;
+			font-size: 0.9em;
+		}
+
+		.gm-item {
+			background: #fff;
+			padding: 5px 10px;
+			border: 1px solid #ddd;
+			border-radius: 4px;
+		}
+
+		.back-link {
+			display: inline-block;
+			margin-bottom: 20px;
+			color: var(--primary-color);
+			text-decoration: none;
+			font-weight: bold;
+		}
+
+		.back-link:hover {
+			text-decoration: underline;
+		}
+	</style>
+</head>
+
+<body>
+	<a href="index.html" class="back-link">&larr; Back to Editor</a>
+
+	<h1>miniFQS Reference & Guide</h1>
+
+	<h2>1. Introduction</h2>
+	<p><strong>miniFQS</strong> separates music into two parallel lines: <strong>Rhythm/Lyrics</strong> and
+		<strong>Pitch</strong>. It is designed to be text-based, optimized for typing speed, and readable.</p>
+	<p>The core concept is "What you see is what you get" — the formatting in the text editor roughly matches the visual
+		layout of the music.</p>
+
+	<h2>2. Anatomy of a Music Block</h2>
+	<p>A standard music block is composed of two lines:</p>
+	<pre>
+Happy Birthday
+[N3] Hap,py | birth day to | you - ; |
+[K&1] cc | d c f | e |</pre>
+
+	<h3>Line 1: Lyrics & Rhythm</h3>
+	<ul>
+		<li><strong>Text</strong> determines the Rhythm.</li>
+		<li><strong>Spaces</strong> denote Beat boundaries.</li>
+		<li><strong>Commas (<code>,</code>)</strong> tie syllables within a word.</li>
+		<li><strong>Dots (<code>.</code>)</strong> split beats into subdivisions.</li>
+	</ul>
+
+	<h3>Line 2: Pitch</h3>
+	<ul>
+		<li>Uses standard note names (a-g).</li>
+		<li><strong>Relative Pitch Rule:</strong> The system chooses the octave nearest to the previous note (similar to
+			LilyPond).</li>
+	</ul>
+
+	<h2>3. Rhythm Quick Reference</h2>
+	<table>
+		<thead>
+			<tr>
+				<th>Symbol</th>
+				<th>Meaning</th>
+				<th>Standard Notation Equiv</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td><code>Space</code></td>
+				<td>Next Beat</td>
+				<td>Barline / Beat grouping</td>
+			</tr>
+			<tr>
+				<td><code>.</code></td>
+				<td>Split Beat</td>
+				<td>Beams / Flags</td>
+			</tr>
+			<tr>
+				<td><code>-</code></td>
+				<td>Sustain</td>
+				<td>Ties / Dotted notes</td>
+			</tr>
+			<tr>
+				<td><code>_</code></td>
+				<td>Short Rest</td>
+				<td>Breaks within a beat</td>
+			</tr>
+			<tr>
+				<td><code>;</code></td>
+				<td>Full Beat Rest</td>
+				<td>Quarter/Eighth Rest</td>
+			</tr>
+			<tr>
+				<td><code>*</code></td>
+				<td>Melisma</td>
+				<td>Slurs</td>
+			</tr>
+			<tr>
+				<td><code>|</code></td>
+				<td>Barline</td>
+				<td>Barline</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h2>4. Pitch Quick Reference</h2>
+	<ul>
+		<li><strong>Relative Pitch:</strong> The system determines the octave based on the previous note.</li>
+		<li><strong>Octave Control:</strong>
+			<ul>
+				<li><code>^</code>: Higher octave.</li>
+				<li><code>/</code>: Lower octave.</li>
+				<li><code>[O4]</code>: Set absolute octave reference (e.g., Middle C).</li>
+			</ul>
+		</li>
+		<li><strong>Accidentals:</strong> <code>#</code> (sharp), <code>&</code> (flat), <code>%</code> (natural).</li>
+		<li><strong>Key Signatures:</strong> <code>[K#2]</code> (D Major), <code>[K&1]</code> (F Major).</li>
+		<li><strong>Chords:</strong> <code>(ceg)</code> - parenthesis grouping.</li>
+	</ul>
+
+	<h2>5. Metadata & Controls</h2>
+	<ul>
+		<li><strong>Directives:</strong> <code>[T120]</code> (Tempo), <code>[I1]</code> (Instrument), <code>[V80]</code>
+			(Volume).</li>
+		<li><strong>Time Signatures:</strong> Handled implicitly via beat groupings (spaces) and explicitly via
+			<code>[B...]</code> directives for beat duration.</li>
+	</ul>
+
+	<h2>6. Interactive Example</h2>
+	<p>Try typing this into a block in the editor:</p>
+	<pre>
+Re,la,tive | pitch * is | cool - -|
+c e g  | c g e | c |</pre>
+
+	<h2>7. Reference: General MIDI Instruments</h2>
+	<p>Use these numbers with the <code>I&lt;number&gt;</code> directive (e.g., <code>[I19]</code> for Organ).</p>
+
+	<div class="gm-list">
+		<!-- Piano -->
+		<div class="gm-item">1. Acoustic Grand Piano</div>
+		<div class="gm-item">2. Bright Acoustic Piano</div>
+		<div class="gm-item">3. Electric Grand Piano</div>
+		<div class="gm-item">4. Honky-tonk Piano</div>
+		<div class="gm-item">5. Electric Piano 1</div>
+		<div class="gm-item">6. Electric Piano 2</div>
+		<div class="gm-item">7. Harpsichord</div>
+		<div class="gm-item">8. Clavinet</div>
+		<!-- Chromatic Percussion -->
+		<div class="gm-item">9. Celesta</div>
+		<div class="gm-item">10. Glockenspiel</div>
+		<div class="gm-item">11. Music Box</div>
+		<div class="gm-item">12. Vibraphone</div>
+		<div class="gm-item">13. Marimba</div>
+		<div class="gm-item">14. Xylophone</div>
+		<div class="gm-item">15. Tubular Bells</div>
+		<div class="gm-item">16. Dulcimer</div>
+		<!-- Organ -->
+		<div class="gm-item">17. Drawbar Organ</div>
+		<div class="gm-item">18. Percussive Organ</div>
+		<div class="gm-item">19. Rock Organ</div>
+		<div class="gm-item">20. Church Organ</div>
+		<div class="gm-item">21. Reed Organ</div>
+		<div class="gm-item">22. Accordion</div>
+		<div class="gm-item">23. Harmonica</div>
+		<div class="gm-item">24. Tango Accordion</div>
+		<!-- Guitar -->
+		<div class="gm-item">25. Acoustic Guitar (nylon)</div>
+		<div class="gm-item">26. Acoustic Guitar (steel)</div>
+		<div class="gm-item">27. Electric Guitar (jazz)</div>
+		<div class="gm-item">28. Electric Guitar (clean)</div>
+		<div class="gm-item">29. Electric Guitar (muted)</div>
+		<div class="gm-item">30. Overdriven Guitar</div>
+		<div class="gm-item">31. Distortion Guitar</div>
+		<div class="gm-item">32. Guitar Harmonics</div>
+		<!-- Bass -->
+		<div class="gm-item">33. Acoustic Bass</div>
+		<div class="gm-item">34. Electric Bass (finger)</div>
+		<div class="gm-item">35. Electric Bass (pick)</div>
+		<div class="gm-item">36. Fretless Bass</div>
+		<div class="gm-item">37. Slap Bass 1</div>
+		<div class="gm-item">38. Slap Bass 2</div>
+		<div class="gm-item">39. Synth Bass 1</div>
+		<div class="gm-item">40. Synth Bass 2</div>
+		<!-- Strings -->
+		<div class="gm-item">41. Violin</div>
+		<div class="gm-item">42. Viola</div>
+		<div class="gm-item">43. Cello</div>
+		<div class="gm-item">44. Contrabass</div>
+		<div class="gm-item">45. Tremolo Strings</div>
+		<div class="gm-item">46. Pizzicato Strings</div>
+		<div class="gm-item">47. Orchestral Harp</div>
+		<div class="gm-item">48. Timpani</div>
+		<!-- Ensemble -->
+		<div class="gm-item">49. String Ensemble 1</div>
+		<div class="gm-item">50. String Ensemble 2</div>
+		<div class="gm-item">51. SynthStrings 1</div>
+		<div class="gm-item">52. SynthStrings 2</div>
+		<div class="gm-item">53. Choir Aahs</div>
+		<div class="gm-item">54. Voice Oohs</div>
+		<div class="gm-item">55. Synth Voice</div>
+		<div class="gm-item">56. Orchestra Hit</div>
+		<!-- Brass -->
+		<div class="gm-item">57. Trumpet</div>
+		<div class="gm-item">58. Trombone</div>
+		<div class="gm-item">59. Tuba</div>
+		<div class="gm-item">60. Muted Trumpet</div>
+		<div class="gm-item">61. French Horn</div>
+		<div class="gm-item">62. Brass Section</div>
+		<div class="gm-item">63. SynthBrass 1</div>
+		<div class="gm-item">64. SynthBrass 2</div>
+		<!-- Reed -->
+		<div class="gm-item">65. Soprano Sax</div>
+		<div class="gm-item">66. Alto Sax</div>
+		<div class="gm-item">67. Tenor Sax</div>
+		<div class="gm-item">68. Baritone Sax</div>
+		<div class="gm-item">69. Oboe</div>
+		<div class="gm-item">70. English Horn</div>
+		<div class="gm-item">71. Bassoon</div>
+		<div class="gm-item">72. Clarinet</div>
+		<!-- Pipe -->
+		<div class="gm-item">73. Piccolo</div>
+		<div class="gm-item">74. Flute</div>
+		<div class="gm-item">75. Recorder</div>
+		<div class="gm-item">76. Pan Flute</div>
+		<div class="gm-item">77. Blown Bottle</div>
+		<div class="gm-item">78. Shakuhachi</div>
+		<div class="gm-item">79. Whistle</div>
+		<div class="gm-item">80. Ocarina</div>
+		<!-- Synth Lead -->
+		<div class="gm-item">81. Lead 1 (square)</div>
+		<div class="gm-item">82. Lead 2 (sawtooth)</div>
+		<div class="gm-item">83. Lead 3 (calliope)</div>
+		<div class="gm-item">84. Lead 4 (chiff)</div>
+		<div class="gm-item">85. Lead 5 (charang)</div>
+		<div class="gm-item">86. Lead 6 (voice)</div>
+		<div class="gm-item">87. Lead 7 (fifths)</div>
+		<div class="gm-item">88. Lead 8 (bass + lead)</div>
+		<!-- Synth Pad -->
+		<div class="gm-item">89. Pad 1 (new age)</div>
+		<div class="gm-item">90. Pad 2 (warm)</div>
+		<div class="gm-item">91. Pad 3 (polysynth)</div>
+		<div class="gm-item">92. Pad 4 (choir)</div>
+		<div class="gm-item">93. Pad 5 (bowed)</div>
+		<div class="gm-item">94. Pad 6 (metallic)</div>
+		<div class="gm-item">95. Pad 7 (halo)</div>
+		<div class="gm-item">96. Pad 8 (sweep)</div>
+		<!-- Synth Effects -->
+		<div class="gm-item">97. FX 1 (rain)</div>
+		<div class="gm-item">98. FX 2 (soundtrack)</div>
+		<div class="gm-item">99. FX 3 (crystal)</div>
+		<div class="gm-item">100. FX 4 (atmosphere)</div>
+		<div class="gm-item">101. FX 5 (brightness)</div>
+		<div class="gm-item">102. FX 6 (goblins)</div>
+		<div class="gm-item">103. FX 7 (echoes)</div>
+		<div class="gm-item">104. FX 8 (sci-fi)</div>
+		<!-- Ethnic -->
+		<div class="gm-item">105. Sitar</div>
+		<div class="gm-item">106. Banjo</div>
+		<div class="gm-item">107. Shamisen</div>
+		<div class="gm-item">108. Koto</div>
+		<div class="gm-item">109. Kalimba</div>
+		<div class="gm-item">110. Bag pipe</div>
+		<div class="gm-item">111. Fiddle</div>
+		<div class="gm-item">112. Shanai</div>
+		<!-- Percussive -->
+		<div class="gm-item">113. Tinkle Bell</div>
+		<div class="gm-item">114. Agogo</div>
+		<div class="gm-item">115. Steel Drums</div>
+		<div class="gm-item">116. Woodblock</div>
+		<div class="gm-item">117. Taiko Drum</div>
+		<div class="gm-item">118. Melodic Tom</div>
+		<div class="gm-item">119. Synth Drum</div>
+		<div class="gm-item">120. Reverse Cymbal</div>
+		<!-- Sound Effects -->
+		<div class="gm-item">121. Guitar Fret Noise</div>
+		<div class="gm-item">122. Breath Noise</div>
+		<div class="gm-item">123. Seashore</div>
+		<div class="gm-item">124. Bird Tweet</div>
+		<div class="gm-item">125. Telephone Ring</div>
+		<div class="gm-item">126. Helicopter</div>
+		<div class="gm-item">127. Applause</div>
+		<div class="gm-item">128. Gunshot</div>
+	</div>
+
+</body>
+
+</html>
