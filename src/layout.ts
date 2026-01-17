@@ -76,12 +76,12 @@ export class LayoutEngine {
 			});
 		}
 
-		const blocks: BlockLayout[] = score.blocks.map(b => this.layoutBlock(b));
+		const blocks: BlockLayout[] = score.blocks.map((b, i) => this.layoutBlock(b, i));
 
 		return { title: titleCmds, blocks };
 	}
 
-	private layoutBlock(block: AST.MusicBlock): BlockLayout {
+	private layoutBlock(block: AST.MusicBlock, blockIndex: number): BlockLayout {
 		const cmds: RenderCommand[] = [];
 		const fh = LAYOUT_CONSTANTS.FONT_HEIGHT;
 		const fw = LAYOUT_CONSTANTS.FONT_WIDTH;
@@ -118,6 +118,7 @@ export class LayoutEngine {
 		let referenceOctave = 4;
 
 		let counter = 1;
+		let beatIndex = 0;
 
 		// Process Lyric Items
 		lyricItems.forEach(item => {
@@ -273,7 +274,35 @@ export class LayoutEngine {
 			});
 
 			// Render Counter
-			cmds.push({ type: 'text', x: cursorX + (fw / 2), y: counterY, text: counter.toString(), color: '#888', font: '10px sans-serif' });
+			// Selection Circle Background
+			cmds.push({
+				type: 'circle',
+				x: cursorX + (fw / 2),
+				y: counterY - 3, // slightly adjust for text baseline center approx
+				r: 10,
+				fill: 'transparent', // Default invisible
+				attributes: {
+					'class': 'beat-circle', // New class for selection
+					'data-block-idx': blockIndex.toString(),
+					'data-beat-idx': beatIndex.toString()
+				}
+			});
+
+			cmds.push({
+				type: 'text',
+				x: cursorX + (fw / 2),
+				y: counterY,
+				text: counter.toString(),
+				color: '#888',
+				font: '10px sans-serif',
+				attributes: {
+					'class': 'beat-counter',
+					'data-block-idx': blockIndex.toString(),
+					'data-beat-idx': beatIndex.toString()
+				}
+			});
+
+			beatIndex++;
 
 			counter += currentDuration;
 			cursorX = localX + 10;

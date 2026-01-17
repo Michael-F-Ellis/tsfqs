@@ -227,6 +227,99 @@
             margin-bottom: 20px;
             text-align: center;
         }
+
+        /* Interactive Beat Counters */
+        .beat-counter {
+            cursor: pointer;
+            transition: fill 0.1s;
+        }
+
+        .beat-counter:hover {
+            fill: var(--primary-color) !important;
+            font-weight: bold;
+        }
+
+        .beat-counter.selected {
+            fill: var(--primary-color) !important;
+            font-weight: bold;
+        }
+
+        /* Hide text color change if we have circle? 
+           User said "observed it highlighted in blue".
+           We can keep text highlight AND add circle.
+        */
+
+        .beat-counter.start {
+            fill: #28a745 !important;
+            /* Green */
+        }
+
+        .beat-circle {
+            cursor: pointer;
+            transition: fill 0.1s;
+        }
+
+        .beat-circle:hover {
+            stroke: #ccc;
+            stroke-width: 1px;
+        }
+
+        .beat-circle.selected {
+            stroke: var(--primary-color);
+            stroke-width: 2px;
+        }
+
+        .beat-circle.start {
+            fill: #28a745 !important;
+            fill-opacity: 0.3;
+        }
+
+        .beat-circle.end {
+            fill: #dc3545 !important;
+            fill-opacity: 0.3;
+        }
+
+        .beat-circle.active {
+            stroke: #ffc107;
+            stroke-width: 3px;
+            fill: rgba(255, 193, 7, 0.1);
+        }
+
+        .beat-counter.end {
+            fill: #dc3545 !important;
+            /* Red */
+        }
+
+        .beat-counter.active {
+            fill: #ffc107 !important;
+            /* Amber for playback */
+            font-weight: 900;
+            text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+        }
+
+        .edit-btn-overlay {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px 6px;
+            cursor: pointer;
+            font-size: 14px;
+            display: none;
+            color: #555;
+        }
+
+        .music-block:hover .edit-btn-overlay {
+            display: block;
+        }
+
+        .edit-btn-overlay:hover {
+            color: var(--primary-color);
+            background: #fff;
+            border-color: var(--primary-color);
+        }
     </style>
     <script type="importmap">
     {
@@ -266,7 +359,6 @@
     <div class="player-bar">
         <div class="controls">
             <button id="play-btn" class="icon-btn">▶</button>
-            <button id="stop-btn" class="icon-btn">◼</button>
         </div>
         <div class="scrubber" id="scrubber">
             <div class="progress-fill" id="progress-fill"></div>

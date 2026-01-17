@@ -13,6 +13,69 @@ export class AudioGenerator {
 		return writeMidiFile([{ events }]);
 	}
 
+	public getBeatTimingMap(score: AST.Score): { map: Map<string, number>, totalTicks: number } {
+		const map = new Map<string, number>();
+		let currentTime = 0;
+		let currentTempo = 120;
+		let currentBeatDuration = "4";
+		const PPQ = 480;
+
+		score.blocks.forEach((block, blockIndex) => {
+			const lyricItems = flattenLyrics(block);
+			let beatIndex = 0;
+
+			lyricItems.forEach(item => {
+				if (item.kind === 'Barline') {
+					return;
+				}
+
+				if (item.kind === 'Directive') {
+					const el = item.directive;
+					if (el.type === 'T') {
+						currentTempo = el.bpm;
+					} else if (el.type === 'B') {
+						currentBeatDuration = el.duration;
+					}
+					return;
+				}
+
+				const beat = item.beat;
+				// Directives in Beat
+				beat.elements.forEach(el => {
+					if ('type' in el) {
+						const dir = el as AST.Directive;
+						if (dir.type === 'T') currentTempo = dir.bpm;
+						else if (dir.type === 'B') currentBeatDuration = dir.duration;
+					}
+				});
+
+				const subDivs = beat.elements.filter(e => 'type' in e && e.type !== 'N' && e.type !== 'B' && e.type !== 'T') as AST.Subdivision[];
+
+				// Beat Duration
+				let beatScale = 1;
+				if (subDivs.length > 0 && subDivs[0].type === 'Syllable') {
+					const match = subDivs[0].text.match(/^(\d+)(.*)/);
+					if (match) {
+						beatScale = parseInt(match[1]);
+					}
+				}
+
+				const beatMult = BEAT_MULTIPLIERS[currentBeatDuration] || 1.0;
+				const beatTotalTicks = beatMult * PPQ * beatScale;
+
+				// Record beat start
+				if (subDivs.length > 0) {
+					// Layout only increments beatIndex for actual beats
+					map.set(`${blockIndex}:${beatIndex}`, currentTime);
+					beatIndex++;
+					currentTime += beatTotalTicks;
+				}
+			});
+		});
+
+		return { map, totalTicks: currentTime };
+	}
+
 	public generateEvents(score: AST.Score): MidiEvent[] {
 		const events: MidiEvent[] = [];
 

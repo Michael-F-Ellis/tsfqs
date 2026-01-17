@@ -40,6 +40,28 @@ let isPlaying = false;
 // We store the full parse result to render each block
 let currentLayout: ScoreLayout | null = null;
 let parsedScore: Score | null = null;
+let beatTimingMap: Map<string, number> | null = null;
+let totalTicks = 0;
+
+// Selection State
+let loopPoints = new Set<string>(); // "blockIdx:beatIdx"
+let isLoopEnabled = false;
+
+// Helpers to get ticks
+function getTicksForPoint(point: string): number {
+	return beatTimingMap?.get(point) || 0;
+}
+
+function getSortedPoints(): number[] {
+	if (!beatTimingMap) return [];
+	const ticks = Array.from(loopPoints).map(p => beatTimingMap!.get(p)!);
+	// Sort logic depends on user intent strictly? Or just chronological?
+	// User wants "Wrap" if Start > End.
+	// So we preserve insertion order? Or user explicitly selects Start then End?
+	// Let's use insertion order converted to ticks.
+	// Set iterates in insertion order.
+	return ticks;
+}
 
 // --- Init ---
 
@@ -86,6 +108,13 @@ function updateGlobalLayout() {
 		parsedScore = parser.parseScore();
 		const layoutEngine = new LayoutEngine();
 		currentLayout = layoutEngine.layoutScore(parsedScore);
+
+		// Generate Timing Map
+		const audioGen = new AudioGenerator();
+		const mapRes = audioGen.getBeatTimingMap(parsedScore);
+		beatTimingMap = mapRes.map;
+		totalTicks = mapRes.totalTicks;
+
 	} catch (e) {
 		console.error("Parse Error:", e);
 		// We might want to show error in UI globally?
@@ -112,23 +141,121 @@ function handlePlay() {
 			// We assume full Score is valid
 			const midiBytes = generator.generateMidi(parsedScore);
 
+			// Calculate Total Ticks directly from map for manual EOF check
+			let totalTicks = 0;
+			if (beatTimingMap) {
+				let max = 0;
+				for (const t of beatTimingMap.values()) {
+					if (t > max) max = t;
+				}
+				totalTicks = max + 480; // Add one beat duration (assuming 4kb ticks/beat standard or from generator)
+			}
+
 			if (!midiPlayer) {
 				midiPlayer = new MidiPlayer.Player((event: any) => {
 					if (event.name === 'Note on' && event.velocity > 0) {
 						soundfontPlayer.play(event.noteName, audioContext!.currentTime, { gain: event.velocity / 100 });
 					}
 				});
+
+				// Attach Event Listeners ONCE
+				midiPlayer.on('playing', (evt: any) => {
+					const tick = evt.tick;
+					highlightActiveBeat(tick);
+
+					if (loopPoints.size >= 2) {
+						const p = Array.from(loopPoints);
+						const startTick = beatTimingMap?.get(p[0]);
+						const endTick = beatTimingMap?.get(p[1]);
+
+						if (startTick === undefined || endTick === undefined) {
+							return;
+						}
+
+						if (startTick < endTick) {
+							// Normal Range
+							if (tick >= endTick) {
+								if (isLoopEnabled) {
+									midiPlayer.skipToTick(startTick);
+									midiPlayer.play();
+								} else {
+									midiPlayer.stop();
+									isPlaying = false;
+									renderControls();
+								}
+							}
+						} else {
+							// Wrap Range
+							if (tick >= endTick && tick < startTick) {
+								if (isLoopEnabled) {
+									midiPlayer.skipToTick(startTick);
+									midiPlayer.play();
+								} else {
+									midiPlayer.stop();
+									isPlaying = false;
+									renderControls();
+								}
+							}
+						}
+
+						// Manual EOF Check (Fail-safe)
+						if (totalTicks > 0 && tick >= totalTicks) {
+							midiPlayer.emitEvent('endOfFile');
+						}
+					}
+				});
+
+				midiPlayer.on('endOfFile', () => {
+					if (loopPoints.size >= 2) {
+						const p = Array.from(loopPoints);
+						const startTick = beatTimingMap?.get(p[0]) || 0;
+						const endTick = beatTimingMap?.get(p[1]) || 0;
+
+						if (startTick > endTick) { // Wrap Mode
+							if (isLoopEnabled) {
+								setTimeout(() => {
+									midiPlayer.stop(); // Reset
+									midiPlayer.skipToTick(0);
+									midiPlayer.play();
+								}, 50);
+								return;
+							} else {
+								setTimeout(() => {
+									midiPlayer.stop(); // Reset
+									midiPlayer.skipToTick(0);
+									midiPlayer.play();
+								}, 50);
+								return;
+							}
+						} else if (isLoopEnabled) {
+							setTimeout(() => {
+								midiPlayer.stop(); // Reset
+								midiPlayer.skipToTick(startTick);
+								midiPlayer.play();
+							}, 50);
+							return;
+						}
+					}
+
+					isPlaying = false;
+					renderControls();
+				});
 			}
 
 			midiPlayer.loadArrayBuffer(midiBytes.buffer);
+
+			// Handle Start Position
+			const points = Array.from(loopPoints);
+			if (points.length > 0) {
+				// Start at first selected point?
+				const startTick = beatTimingMap?.get(points[0]) || 0;
+				midiPlayer.skipToTick(startTick);
+			}
+
 			midiPlayer.play();
 			isPlaying = true;
 			renderControls();
 
-			midiPlayer.on('endOfFile', () => {
-				isPlaying = false;
-				renderControls();
-			});
 
 		} catch (e) {
 			alert("Error generating audio: " + (e as Error).message);
@@ -191,10 +318,7 @@ function renderUI() {
 			div.appendChild(saveBtn);
 		} else {
 			// VIEWER
-			div.onclick = () => startEditing(index);
-
-			// What to render?
-			// If currentLayout is valid:
+			// Render Content First
 			if (currentLayout) {
 				const renderer = new Renderer();
 
@@ -255,6 +379,18 @@ function renderUI() {
 			} else {
 				div.textContent = "(Parse Error)";
 			}
+
+			// Append Edit Overlay button AFTER rendering content
+			const editBtn = document.createElement('div');
+			editBtn.className = 'edit-btn-overlay';
+			editBtn.textContent = '✏️ Edit';
+			editBtn.onclick = (e) => {
+				e.stopPropagation();
+				startEditing(index);
+			}
+			div.appendChild(editBtn);
+
+			// div.onclick = () => startEditing(index); // REMOVED implicit click
 		}
 
 		list.appendChild(div);
@@ -270,6 +406,30 @@ function renderUI() {
 		list.appendChild(spacer);
 	});
 
+	// Add Global Listener for Beat Clicks
+	list.onclick = (e) => {
+		const target = e.target as HTMLElement;
+		// Check if SVG Element or Text
+		// ClassName on SVGElement is an SVGAnimatedString usually?
+		let className = "";
+		if (target.getAttribute) className = target.getAttribute('class') || "";
+
+		// If target is SVGAnimatedString, it doesn't have .includes method properly sometimes on older browsers?
+		// But getAttribute('class') returns string. Safe.
+
+		if (className.includes('beat-counter')) {
+			e.stopPropagation(); // Stop bubbling?
+			const bIdx = target.getAttribute('data-block-idx');
+			const btIdx = target.getAttribute('data-beat-idx');
+			if (bIdx && btIdx) {
+				handleBeatClick(bIdx, btIdx);
+			}
+		}
+	};
+
+	// Visual Update Persistence
+	updateBeatVisuals();
+
 	renderControls();
 }
 
@@ -279,6 +439,24 @@ function renderControls() {
 		playBtn.textContent = isPlaying ? '◼' : '▶';
 		playBtn.onclick = handlePlay;
 	}
+
+	// Loop Button
+	let loopBtn = document.getElementById('loop-btn');
+	if (!loopBtn) {
+		// Create it if not exists (Hack inject)
+		const spacer = document.createElement('div');
+		spacer.style.width = '10px';
+		playBtn?.parentNode?.appendChild(spacer);
+
+		loopBtn = document.createElement('button');
+		loopBtn.id = 'loop-btn';
+		loopBtn.className = 'icon-btn';
+		loopBtn.textContent = '🔁';
+		loopBtn.onclick = toggleLoop;
+		playBtn?.parentNode?.appendChild(loopBtn);
+	}
+	loopBtn.style.opacity = isLoopEnabled ? '1' : '0.5';
+	// console.log("RenderControls. LoopEnabled:", isLoopEnabled);
 }
 
 // --- Actions ---
@@ -395,6 +573,50 @@ function handleClear() {
 }
 
 // Listeners
+async function handleDownloadMidi() {
+	if (!parsedScore) return;
+	try {
+		const gen = new AudioGenerator();
+		const bytes = gen.generateMidi(parsedScore);
+
+		// Modern API
+		if ('showSaveFilePicker' in window) {
+			try {
+				const handle = await (window as any).showSaveFilePicker({
+					suggestedName: 'score.mid',
+					types: [{
+						description: 'MIDI File',
+						accept: { 'audio/midi': ['.mid'] },
+					}],
+				});
+				const writable = await handle.createWritable();
+				await writable.write(bytes);
+				await writable.close();
+				return;
+			} catch (err: any) {
+				if (err.name === 'AbortError') return;
+				console.warn("FS API failed", err);
+			}
+		}
+
+		// Fallback
+		const filename = prompt("Save MIDI As:", "score.mid");
+		if (!filename) return;
+
+		const blob = new Blob([bytes as any], { type: 'audio/midi' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		a.click();
+		URL.revokeObjectURL(url);
+
+	} catch (e) {
+		alert("Error: " + e);
+	}
+}
+
+// Listeners
 document.getElementById('append-block-btn')?.addEventListener('click', () => {
 	addBlock(blocks.length);
 });
@@ -403,23 +625,100 @@ document.getElementById('load-btn')?.addEventListener('click', handleLoad);
 document.getElementById('save-btn')?.addEventListener('click', handleSave);
 document.getElementById('print-btn')?.addEventListener('click', handlePrint);
 document.getElementById('clear-btn')?.addEventListener('click', handleClear);
+document.getElementById('download-btn')?.addEventListener('click', handleDownloadMidi);
 
-document.getElementById('download-btn')?.addEventListener('click', () => {
-	if (!parsedScore) return;
-	try {
-		const gen = new AudioGenerator();
-		const bytes = gen.generateMidi(parsedScore);
-		const blob = new Blob([bytes as any], { type: 'audio/midi' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'score.mid';
-		a.click();
-		URL.revokeObjectURL(url);
-	} catch (e) {
-		alert("Error: " + e);
+
+function toggleLoop() {
+	isLoopEnabled = !isLoopEnabled;
+	console.log("Loop Toggled. New State:", isLoopEnabled);
+	renderControls();
+}
+
+function handleBeatClick(bIdx: string, btIdx: string) {
+	const key = `${bIdx}:${btIdx}`;
+
+	// Logic: 
+	// If ALREADY selected: remove it.
+	// If NOT selected:
+	//   If < 2 points: add it.
+	//   If 2 points: Remove oldest (first in iterator) and add new? 
+	//   OR User said "Toggle". 
+
+	if (loopPoints.has(key)) {
+		loopPoints.delete(key);
+	} else {
+		if (loopPoints.size >= 2) {
+			// Remove first inserted
+			const first = loopPoints.values().next().value as string;
+			loopPoints.delete(first);
+		}
+		loopPoints.add(key);
 	}
-});
+
+	// Visual Update
+	updateBeatVisuals();
+}
+
+function updateBeatVisuals() {
+	// Clear all
+	document.querySelectorAll('.beat-counter, .beat-circle').forEach(el => {
+		el.classList.remove('selected', 'start', 'end', 'active');
+	});
+
+	const p = Array.from(loopPoints);
+	p.forEach((key, i) => {
+		const [b, bt] = key.split(':');
+		const counterEl = document.querySelector(`.beat-counter[data-block-idx="${b}"][data-beat-idx="${bt}"]`);
+		const circleEl = document.querySelector(`.beat-circle[data-block-idx="${b}"][data-beat-idx="${bt}"]`);
+
+		if (counterEl) {
+			counterEl.classList.add('selected');
+			if (p.length === 2) {
+				if (i === 0) counterEl.classList.add('start');
+				else counterEl.classList.add('end');
+			}
+		}
+		if (circleEl) {
+			circleEl.classList.add('selected');
+			if (p.length === 2) {
+				if (i === 0) circleEl.classList.add('start');
+				else circleEl.classList.add('end');
+			}
+		}
+	});
+}
+
+function highlightActiveBeat(tick: number) {
+	// Find the closest beat that started <= tick.
+	// This requires efficient search or just iterating map? score is small?
+	// Map is string keys. We need sorted entries.
+
+	// Optimization: Cache sorted entries?
+	// For MVP: Iteration
+	// Find max startTick <= tick
+
+	if (!beatTimingMap) return;
+
+	// Only highlight ONE active beat
+	document.querySelectorAll('.beat-counter.active').forEach(el => el.classList.remove('active'));
+
+	// Naive search
+	let bestKey = null;
+	let maxTick = -1;
+
+	for (const [key, t] of beatTimingMap.entries()) {
+		if (t <= tick && t > maxTick) {
+			maxTick = t;
+			bestKey = key;
+		}
+	}
+
+	if (bestKey) {
+		const [b, bt] = bestKey.split(':');
+		const el = document.querySelector(`.beat-counter[data-block-idx="${b}"][data-beat-idx="${bt}"]`);
+		el?.classList.add('active');
+	}
+}
 
 // Start
 init();

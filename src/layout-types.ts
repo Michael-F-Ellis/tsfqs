@@ -1,4 +1,4 @@
-export type CommandType = 'text' | 'line' | 'rect';
+export type CommandType = 'text' | 'line' | 'rect' | 'circle';
 
 export interface RenderCommand {
 	type: CommandType;
@@ -17,6 +17,9 @@ export interface RenderCommand {
 	width?: number;
 	height?: number;
 	fill?: string;
+	// For circles
+	r?: number;
+	attributes?: Record<string, string>;
 }
 
 export interface BlockLayout {
