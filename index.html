@@ -320,6 +320,26 @@
             background: #fff;
             border-color: var(--primary-color);
         }
+
+        /* Print Overrides for visual markers */
+        @media print {
+
+            .beat-circle.start,
+            .beat-circle.end,
+            .beat-circle.selected {
+                fill: transparent !important;
+                stroke: none !important;
+            }
+
+            /* Also reset the text highlight if desired (optional, but consistent with removing markers) */
+            .beat-counter.start,
+            .beat-counter.end,
+            .beat-counter.selected {
+                fill: #888 !important;
+                font-weight: normal !important;
+                text-shadow: none !important;
+            }
+        }
     </style>
     <script type="importmap">
     {
