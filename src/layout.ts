@@ -239,8 +239,10 @@ export class LayoutEngine {
 						const renderNoteHelper = (note: string, oct: number, accStr: string | null, xOffset: number) => {
 							const acc = keySig.getAccidental(note, oct, accStr);
 							let color = 'black';
-							if (acc === '#' || acc === '##') color = '#d00';
-							if (acc === '&' || acc === '&&') color = '#00d';
+							if (acc === '#') color = '#d00';
+							else if (acc === '##') color = '#ffa500';
+							else if (acc === '&') color = '#1e90ff';
+							else if (acc === '&&') color = '#32cd32';
 
 							const y = getPitchY(centerLineY, oct, note, acc, referenceOctave);
 							cmds.push({ type: 'text', x: localX + xOffset, y: y, text: note, color, font: 'bold 16px sans-serif' });

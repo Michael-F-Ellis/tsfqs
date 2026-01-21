@@ -1,0 +1,14 @@
+[
+	{
+		"id": "chromatic_run",
+		"title": "Chromatic Accidental Scale",
+		"explanation": "Demonstration of sharps (#), double sharps (##), flats (&), and double flats (&&). Note the color coding.",
+		"code": "[T60] *** *** *** *** | *** *** *** *** |\n[K%0] c#cd #def #fg#g a#ab | cb&b a&ag &gfe &ed&d |"
+	},
+	{
+		"id": "rhythm_demo",
+		"title": "Rhythm & Subdivision",
+		"explanation": "Using spaces for beats and dots for subdivision. The second measure uses '.' to split beats.",
+		"code": "[T120] 1 2 3 4 | 1.and 2.and 3.e.and.a 4 |\n[K%0] c c c c | c c c c |"
+	}
+]

@@ -97,10 +97,78 @@
 			font-weight: bold;
 		}
 
+
 		.back-link:hover {
 			text-decoration: underline;
 		}
+
+		/* Interactive Beat Counters */
+		.beat-counter {
+			cursor: pointer;
+			transition: fill 0.1s;
+		}
+
+		.beat-counter:hover {
+			fill: var(--primary-color) !important;
+			font-weight: bold;
+		}
+
+		.beat-counter.selected {
+			fill: var(--primary-color) !important;
+			font-weight: bold;
+		}
+
+		.beat-counter.start {
+			fill: #28a745 !important;
+		}
+
+		.beat-circle {
+			cursor: pointer;
+			transition: fill 0.1s;
+		}
+
+		.beat-circle:hover {
+			stroke: #ccc;
+			stroke-width: 1px;
+		}
+
+		.beat-circle.selected {
+			stroke: var(--primary-color);
+			stroke-width: 2px;
+		}
+
+		.beat-circle.start {
+			fill: #28a745 !important;
+			fill-opacity: 0.3;
+		}
+
+
+		.beat-circle.end {
+			fill: #dc3545 !important;
+			fill-opacity: 0.3;
+		}
+
+		/* Removed .beat-circle.active per user request */
+
+		.beat-counter.end {
+			fill: #dc3545 !important;
+		}
+
+		.beat-counter.active {
+			fill: #ffc107 !important;
+			font-weight: 900;
+			text-shadow: 0 0 5px rgba(255, 193, 7, 0.5);
+		}
 	</style>
+	<script type="importmap">
+    {
+      "imports": {
+        "midi-player-js": "https://esm.sh/midi-player-js",
+        "soundfont-player": "https://esm.sh/soundfont-player"
+      }
+    }
+    </script>
+	<script type="module" src="/src/info-driver.js"></script>
 </head>
 
 <body>
@@ -110,7 +178,8 @@
 
 	<h2>1. Introduction</h2>
 	<p><strong>miniFQS</strong> separates music into two parallel lines: <strong>Rhythm/Lyrics</strong> and
-		<strong>Pitch</strong>. It is designed to be text-based, optimized for typing speed, and readable.</p>
+		<strong>Pitch</strong>. It is designed to be text-based, optimized for typing speed, and readable.
+	</p>
 	<p>The core concept is "What you see is what you get" — the formatting in the text editor roughly matches the visual
 		layout of the music.</p>
 
@@ -194,7 +263,15 @@ Happy Birthday
 				<li><code>[O4]</code>: Set absolute octave reference (e.g., Middle C).</li>
 			</ul>
 		</li>
-		<li><strong>Accidentals:</strong> <code>#</code> (sharp), <code>&</code> (flat), <code>%</code> (natural).</li>
+		<li><strong>Accidentals:</strong>
+			<ul>
+				<li><code>#</code> (Sharp): <span style="color: #d00;">Red</span></li>
+				<li><code>##</code> (Double Sharp): <span style="color: #ffa500;">Orange</span></li>
+				<li><code>&</code> (Flat): <span style="color: #1e90ff;">Dodger Blue</span></li>
+				<li><code>&&</code> (Double Flat): <span style="color: #32cd32;">Lime Green</span></li>
+				<li><code>%</code> (Natural): Black</li>
+			</ul>
+		</li>
 		<li><strong>Key Signatures:</strong> <code>[K#2]</code> (D Major), <code>[K&1]</code> (F Major).</li>
 		<li><strong>Chords:</strong> <code>(ceg)</code> - parenthesis grouping.</li>
 	</ul>
@@ -204,11 +281,17 @@ Happy Birthday
 		<li><strong>Directives:</strong> <code>[T120]</code> (Tempo), <code>[I1]</code> (Instrument), <code>[V80]</code>
 			(Volume).</li>
 		<li><strong>Time Signatures:</strong> Handled implicitly via beat groupings (spaces) and explicitly via
-			<code>[B...]</code> directives for beat duration.</li>
+			<code>[B...]</code> directives for beat duration.
+		</li>
 	</ul>
 
-	<h2>6. Interactive Example</h2>
-	<p>Try typing this into a block in the editor:</p>
+	<h2>6. Interactive Examples</h2>
+	<div id="examples-container">
+		<!-- Examples loaded here -->
+	</div>
+
+	<h2 style="display:none">Legacy Example</h2>
+	<p style="display:none">Try typing this into a block in the editor:</p>
 	<pre>
 Re,la,tive | pitch * is | cool - -|
 c e g  | c g e | c |</pre>
